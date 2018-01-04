@@ -1,0 +1,49 @@
+machine:
+  environment:
+    APP_HOME: /home/ubuntu/CircleCI-Sample/app
+    PATH: "~/$CIRCLE_PROJECT_REPONAME/gradle-2.9/bin:$PATH"
+    TERM: "dumb"
+    ADB_INSTALL_TIMEOUT: "10"
+    GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"'
+
+dependencies:
+  pre:
+    - wget "https://services.gradle.org/distributions/gradle-2.9-bin.zip"; unzip gradle-2.9-bin.zip
+    - echo y | android update sdk --no-ui --all --filter "tools"
+    - echo y | android update sdk --no-ui --all --filter "build-tools-26.0.2"
+    - echo y | android update sdk --no-ui --all --filter "android-26"
+    - echo y | android update sdk --no-ui --all --filter "extra-google-m2repository"
+    - echo y | android update sdk --no-ui --all --filter "extra-google-google_play_services"
+    - echo y | android update sdk --no-ui --all --filter "extra-android-support"
+    - echo y | android update sdk --no-ui --all --filter "extra-android-m2repository"
+#    - echo y | android update sdk -a -u -t sys-img-armeabi-v7a-google_apis-24
+#    - android list targets
+
+test:
+  pre:
+    # create the android emulator
+#    - echo no | android create avd -n custom-android24-googleapis -t "android-24" --abi google_apis/armeabi-v7a
+#    - android list avd
+    # start the emulator
+#    - emulator -avd custom-android24-googleapis -no-audio -no-window:
+    - emulator -avd circleci-android22 -no-audio -no-window:
+        background: true
+        parallel: true
+  override:
+    # wait for it to have booted
+    - circle-android wait-for-boot
+    # unlock the emulator screen
+    - sleep 30
+    - adb shell input keyevent 82
+    # run tests against the emulator.
+    - ADB_INSTALL_TIMEOUT=40 ./gradlew jacocoTestReport --stacktrace -PdisablePreDex:
+        timeout: 5400
+  post:
+    # rename the report folder of jacoco to meet the report name in the plugin
+    - mv $APP_HOME/build/reports/jacoco/jacocoTestReport $APP_HOME/build/reports/jacoco/test
+    # copy the build outputs to artifacts
+    - cp -r $APP_HOME/build/outputs $CIRCLE_ARTIFACTS
+    # copy the build reports to artifacts
+    - cp -r $APP_HOME/build/reports $CIRCLE_ARTIFACTS
+    # copy the test results to the test results directory.
+    - cp -r $APP_HOME/build/outputs/androidTest-results/* $CIRCLE_TEST_REPORTS

@@ -1,0 +1,48 @@
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion '0.7.4+'
+}
+
+/**
+ * This JacocoTestReport task merges local Unit Tests and emulator/device Instrumentation Tests into a single coverage report.
+ * Also ignores Dagger 2 generated code.
+ * Add this task to your Android app/build.gradle and run your test suites then execute this task.
+ * Coverage report will appear in app/build/reports/jacoco/jacocoTestReport/
+ * as standard xml compatible with codecov.io and human readable html
+ * dependsOn: ['testDebugUnitTest', 'connectedDebugAndroidTest']
+ */
+task jacocoTestReport(type: JacocoReport, dependsOn: ['createDebugAndroidTestCoverageReport']) {
+    reports {
+        html.enabled = true
+    }
+
+    def mainSrc = "$project.projectDir/src/main/java"
+    def debugTree = fileTree(dir: "$project.buildDir/intermediates/classes/debug", excludes: [
+            '**/R.class',
+            '**/R$*.class',
+            '**/BuildConfig.*',
+            '**/Manifest*.*',
+            '**/*$ViewInjector*.*',
+            // binding
+            'android/databinding/*.class',
+            'android/databinding/**/*.class',
+            'com/android/databinding/**/*.class',
+            '**/*Binding.class',
+            '**/BR.*',
+            // android annotations
+            '**/*_.class',
+            // dagger
+            '**/*Module.*',
+            '**/*Dagger*.*',
+            '**/*MembersInjector*.*',
+            '**/*_Provides*Factory*.*',
+            '**/*_Factory.*'
+    ])
+
+    sourceDirectories = files([mainSrc])
+    classDirectories = files([debugTree])
+    executionData = fileTree(dir: project.buildDir, includes: [
+            'outputs/code-coverage/connected/*coverage.ec'
+    ])
+}
