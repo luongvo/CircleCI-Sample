@@ -1,5 +1,6 @@
 package vn.luongvo.circleci.sample;
 
+import android.support.test.filters.LargeTest;
 import android.support.test.rule.ActivityTestRule;
 
 import org.junit.Rule;
@@ -20,6 +21,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.withText;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 
+@LargeTest
 public class MainActivityTest extends BaseActivityTest {
 
     @Rule
